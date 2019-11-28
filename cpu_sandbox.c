@@ -1,52 +1,74 @@
+/*
+ * 
+ *  useless cpu core
+ *  copyfuck kelsey boey, 2019
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>	// for some randomness
 
-// some important things first
-#define MOV 0xa000
-#define ADD 0xb000
-#define SUB 0xc000
-#define MUL 0xd000
-#define DIV 0xe000
-#define JMP 0xf000
+// opcode types
+#define SHL 0x1000	// shift left
+#define SHR 0x2000	// shift right
+#define PSH 0x3000	// push
+#define POP 0x4000	// pop
+#define BRA 0x5000	// branch
+#define TRP 0x6000	// trap
+#define SYC 0x7000	// system call
+#define RST 0x8000	// reset
+#define LEA 0x9000	// load effective address
+#define MOV 0xa000	// move
+#define ADD 0xb000	// add
+#define SUB 0xc000	// subtract
+#define MUL 0xd000	// multiply
+#define DIV 0xe000	// divide
+#define JMP 0xf000	// jump
 
+// cpu state
 struct cpustate
 {
 	const char	*model;
 	uint32_t	regs[8];
 	uint8_t		flags[6];
 	uint32_t	pc;
-	uint16_t	op;
-};
+} cpustate;
 
-void decodeinstr(uint32_t addr, struct cpustate * state);
+// system devices
+struct devices
+{
+	uint32_t	ram[4];
+} devices;
+
+// function prototypes
+void decodeinstr(uint32_t addr[], struct cpustate * state);
 
 // code start
-int main()
+int main(int argc, char * argv[])
 {
 	// reset cpu
 	srand(time(NULL));	// random seed
 	printf("CPU reset\n");
-	// fill regs with garbage, randomise flags and init pc
+	// init regs, flags pc and fill ram
 	struct cpustate cpu;
+	struct devices dev = {.ram = rand(), rand(), rand(), rand()};
 	cpu.model = "SillyCPU v0.01";
-	cpu.regs[0] = rand();
-	cpu.regs[1] = rand();
-	cpu.regs[2] = rand();
-	cpu.regs[3] = rand();
-	cpu.regs[4] = rand();
-	cpu.regs[5] = rand();
-	cpu.regs[6] = rand();
-	cpu.regs[7] = rand();
-	cpu.flags[0] = rand() & 1;
-	cpu.flags[1] = rand() & 1;
-	cpu.flags[2] = rand() & 1;
-	cpu.flags[3] = rand() & 1;
-	cpu.flags[4] = rand() & 1;
-	cpu.flags[5] = rand() & 1;
-	cpu.pc = -1;
-	cpu.op = rand();
+	cpu.regs[0] = 0;
+	cpu.regs[1] = 0;
+	cpu.regs[2] = 0;
+	cpu.regs[3] = 0;
+	cpu.regs[4] = 0;
+	cpu.regs[5] = 0;
+	cpu.regs[6] = 0;
+	cpu.regs[7] = 0;
+	cpu.flags[0] = 0;
+	cpu.flags[1] = 0;
+	cpu.flags[2] = 0;
+	cpu.flags[3] = 0;
+	cpu.flags[4] = 0;
+	cpu.flags[5] = 0;
+	cpu.pc = 0;
 	printf("Initialising %s\n", cpu.model);
 	for (int regno = 0; regno <= 7; regno++)
 	{
@@ -57,35 +79,65 @@ int main()
 		printf("Flag %d: 0x%x\n", flagno, cpu.flags[flagno]);
 	}
 	printf("PC: 0x%08x\n", cpu.pc);
-	decodeinstr(cpu.pc, &cpu);
+	decodeinstr(dev.ram, &cpu);
 	printf("Exiting...\n");
+	return 0;
 }
 
-void decodeinstr(uint32_t addr, struct cpustate * state)
+// decode instructions
+void decodeinstr(uint32_t addr[], struct cpustate * state)
 {
 	printf("warning: decode not yet fully implemented\n");
-	printf("Opcode: 0x%x\n", state->op);
-	if (state->op >> 12 == MOV >> 12)
+	for (int opno = 0; opno <= 3; opno++)
 	{
-		printf("MOV instruction encountered\n");
-	} else if (state->op >> 12 == ADD >> 12)
-	{
-		printf("ADD instruction encountered\n");
-	} else if (state->op >> 12 == SUB >> 12)
-	{
-		printf("SUB instruction encountered\n");
-	} else if (state->op >> 12 == MUL >> 12)
-	{
-		printf("MUL instruction encountered\n");
-	} else if (state->op >> 12 == DIV >> 12)
-	{
-		printf("DIV instruction encountered\n");
-	} else if (state->op >> 12 == JMP >> 12)
-	{
-		printf("JMP instruction encountered\n");
-	} else
-	{
-		printf("Undefined instruction\n");
+		printf("Opcode 0x%04x at address 0x%08x\n", addr[opno], state->pc);
+		if (addr[opno] >> 12 == SHL >> 12) // shift left
+		{
+			printf("SHL instruction encountered\n");
+		} else if (addr[opno] >> 12 == SHR >> 12) // shift right
+		{
+			printf("SHR instruction encountered\n");
+		} else if (addr[opno] >> 12 == PSH >> 12) // push
+		{
+			printf("PSH instruction encountered\n");
+		} else if (addr[opno] >> 12 == POP >> 12) // pop
+		{
+			printf("POP instruction encountered\n");
+		} else if (addr[opno] >> 12 == TRP >> 12) // trap
+		{
+			printf("TRP instruction encountered\n");
+		} else if (addr[opno] >> 12 == SYC >> 12) // system call
+		{
+			printf("SYC instruction encountered\n");
+		} else if (addr[opno] >> 12 == RST >> 12) // reset
+		{
+			printf("RST instruction encountered\n");
+		} else if (addr[opno] >> 12 == LEA >> 12) // load effective address
+		{
+			printf("LEA instruction encountered\n");
+		} else if (addr[opno] >> 12 == MOV >> 12) // move
+		{
+			printf("MOV instruction encountered\n");
+		} else if (addr[opno] >> 12 == ADD >> 12) // add
+		{
+			printf("ADD instruction encountered\n");
+		} else if (addr[opno] >> 12 == SUB >> 12) // subtract
+		{
+			printf("SUB instruction encountered\n");
+		} else if (addr[opno] >> 12 == MUL >> 12) // multiply
+		{
+			printf("MUL instruction encountered\n");
+		} else if (addr[opno] >> 12 == DIV >> 12) // divide
+		{
+			printf("DIV instruction encountered\n");
+		} else if (addr[opno] >> 12 == JMP >> 12) // jump
+		{
+			printf("JMP instruction encountered\n");
+		} else // undefined
+		{
+			printf("Undefined instruction\n");
+		}
+		state->pc += 2; // increment pc
 	}
 	return;
 }
