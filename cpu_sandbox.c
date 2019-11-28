@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <time.h>	// for some randomness
 
-// opcode types
+// opcode types (0x0000 is undefined)
 #define SHL 0x1000	// shift left
 #define SHR 0x2000	// shift right
 #define PSH 0x3000	// push
@@ -30,9 +30,10 @@
 struct cpustate
 {
 	const char	*model;
-	uint32_t	regs[8];
-	uint8_t		flags[6];
+	uint32_t	regs[16];
+	uint8_t		flags[6];	// carry, overflow, underflow, equal, more, less? (CVUEML)
 	uint32_t	pc;
+	uint8_t		running;
 } cpustate;
 
 // system devices
@@ -53,6 +54,7 @@ int main(int argc, char * argv[])
 	// init regs, flags pc and fill ram
 	struct cpustate cpu;
 	struct devices dev = {.ram = rand(), rand(), rand(), rand()};
+	cpu.running = 1;
 	cpu.model = "SillyCPU v0.01";
 	cpu.regs[0] = 0;
 	cpu.regs[1] = 0;
@@ -62,6 +64,14 @@ int main(int argc, char * argv[])
 	cpu.regs[5] = 0;
 	cpu.regs[6] = 0;
 	cpu.regs[7] = 0;
+	cpu.regs[8] = 0;
+	cpu.regs[9] = 0;
+	cpu.regs[10] = 0;
+	cpu.regs[11] = 0;
+	cpu.regs[12] = 0;
+	cpu.regs[13] = 0;
+	cpu.regs[14] = 0;
+	cpu.regs[15] = 0;
 	cpu.flags[0] = 0;
 	cpu.flags[1] = 0;
 	cpu.flags[2] = 0;
@@ -70,7 +80,7 @@ int main(int argc, char * argv[])
 	cpu.flags[5] = 0;
 	cpu.pc = 0;
 	printf("Initialising %s\n", cpu.model);
-	for (int regno = 0; regno <= 7; regno++)
+	for (int regno = 0; regno <= 15; regno++)
 	{
 		printf("Reg %d: 0x%08x\n", regno, cpu.regs[regno]);
 	}
@@ -79,7 +89,10 @@ int main(int argc, char * argv[])
 		printf("Flag %d: 0x%x\n", flagno, cpu.flags[flagno]);
 	}
 	printf("PC: 0x%08x\n", cpu.pc);
-	decodeinstr(dev.ram, &cpu);
+	while (cpu.running)
+	{
+		decodeinstr(dev.ram, &cpu);
+	} 
 	printf("Exiting...\n");
 	return 0;
 }
@@ -139,5 +152,7 @@ void decodeinstr(uint32_t addr[], struct cpustate * state)
 		}
 		state->pc += 2; // increment pc
 	}
+	state->running = 0;
+	printf("CPU shutdown\n");
 	return;
 }
