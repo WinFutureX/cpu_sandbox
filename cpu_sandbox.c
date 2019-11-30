@@ -39,11 +39,11 @@ struct cpustate
 // system devices
 struct devices
 {
-	uint32_t	ram[4];
+	uint16_t	ram[4];
 } devices;
 
 // function prototypes
-void decodeinstr(uint32_t addr[], struct cpustate * state);
+void decodeinstr(uint16_t addr[], struct cpustate * state);
 
 // code start
 int main(int argc, char * argv[])
@@ -80,14 +80,20 @@ int main(int argc, char * argv[])
 	cpu.flags[5] = 0;
 	cpu.pc = 0;
 	printf("Initialising %s\n", cpu.model);
+	/*
 	for (int regno = 0; regno <= 15; regno++)
 	{
 		printf("Reg %d: 0x%08x\n", regno, cpu.regs[regno]);
 	}
+	*/
+	printf("reg init\n");
+	/*
 	for (int flagno = 0; flagno <= 5; flagno++)
 	{
 		printf("Flag %d: 0x%x\n", flagno, cpu.flags[flagno]);
 	}
+	*/
+	printf("flag init\n");
 	printf("PC: 0x%08x\n", cpu.pc);
 	while (cpu.running)
 	{
@@ -98,7 +104,7 @@ int main(int argc, char * argv[])
 }
 
 // decode instructions
-void decodeinstr(uint32_t addr[], struct cpustate * state)
+void decodeinstr(uint16_t addr[], struct cpustate * state)
 {
 	printf("warning: decode not yet fully implemented\n");
 	for (int opno = 0; opno <= 3; opno++)
@@ -116,6 +122,9 @@ void decodeinstr(uint32_t addr[], struct cpustate * state)
 		} else if (addr[opno] >> 12 == POP >> 12) // pop
 		{
 			printf("POP instruction encountered\n");
+		} else if (addr[opno] >> 12 == BRA >> 12) // branch
+		{
+			printf("BRA instruction encountered\n");
 		} else if (addr[opno] >> 12 == TRP >> 12) // trap
 		{
 			printf("TRP instruction encountered\n");
@@ -148,7 +157,8 @@ void decodeinstr(uint32_t addr[], struct cpustate * state)
 			printf("JMP instruction encountered\n");
 		} else // undefined
 		{
-			printf("Undefined instruction\n");
+			printf("Undefined instruction - shutting down\n");
+			break;
 		}
 		state->pc += 2; // increment pc
 	}
